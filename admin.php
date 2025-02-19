@@ -423,6 +423,7 @@ class Admin
         unset($stmt);
         return json_encode($result);
     }
+    
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
