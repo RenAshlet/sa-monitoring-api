@@ -404,6 +404,7 @@ class Admin
         return json_encode($returnValue);
     }
 
+    //for tracking what admin made changes
     function displayActivityLog($json)
     {
         include 'connection.php';
