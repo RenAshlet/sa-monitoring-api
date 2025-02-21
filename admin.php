@@ -5,6 +5,74 @@ header("Access-Control-Allow-Origin: *");
 class Admin
 {
 
+    //admin can also add other admin
+    function createAdmin($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+
+        try {
+            $password = strtolower($json['lastname']); // Lowercase lastname as password
+
+            // Check if the username already exists
+            $checkSql = "SELECT COUNT(*) FROM admin WHERE username = :username";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(':username', $json['username']);
+            $checkStmt->execute();
+            $existingUserCount = $checkStmt->fetchColumn();
+            if ($existingUserCount > 0) {
+                return json_encode(2); // Username already exists
+            }
+
+            // Insert new record
+            $sql = "INSERT INTO `admin`(`firstname`, `lastname`, `username`, `password`)";
+            $sql .= " VALUES (:firstname, :lastname, :username, :password)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':firstname', $json['firstname']);
+            $stmt->bindParam(':lastname', $json['lastname']);
+            $stmt->bindParam(':username', $json['username']);
+            $stmt->bindParam(':password', $password);
+            $stmt->execute();
+            $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
+
+            if ($returnValue === 1) {
+                $logData = [
+                    'adminId' => $json['adminId'],
+                    'action' => 'Added new admin: ' . $json['firstname'] . ' ' . $json['lastname']
+                ];
+                $this->activityLog(json_encode($logData));
+            }
+        } catch (PDOException $e) {
+            error_log("Database Error: " . $e->getMessage());
+            $returnValue = 0;
+        }
+        $stmt = null;
+        $checkStmt = null;
+
+        return json_encode($returnValue);
+    }
+
+    //for displaying the list of admin
+    function displayAdmin($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+
+        try {
+            $sql = "SELECT firstname, lastname FROM `admin` ORDER BY admin_id ASC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+
+        return json_encode($result);
+    }
+
     function activityLog($json)
     {
         include 'connection.php';
@@ -425,7 +493,6 @@ class Admin
         unset($stmt);
         return json_encode($result);
     }
-    
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -438,6 +505,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
 $admin = new Admin();
 switch ($operation) {
+    case "createAdmin":
+        echo $admin->createAdmin($json);
+        break;
+    case "displayAdmin":
+        echo $admin->displayAdmin($json);
+        break;
     case "createSaAccount":
         echo $admin->createSaAccount($json);
         break;

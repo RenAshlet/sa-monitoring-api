@@ -6,6 +6,7 @@ class StudentAssistant
 {
 
     //for displaying days
+
     function displayDays($json)
     {
         include 'connection.php';
@@ -107,7 +108,7 @@ class StudentAssistant
         TIME_FORMAT(tt.time_out, '%h:%i %p') AS time_out,      
         tt.approved_status,
         tt.status,
-         COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
+        COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM student_assistant sa
         LEFT JOIN time_track tt ON sa.sa_id = tt.sa_id
         LEFT JOIN sa_duty_schedule sds ON tt.duty_schedule_id = sds.duty_schedule_id
