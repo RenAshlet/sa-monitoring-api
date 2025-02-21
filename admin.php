@@ -79,6 +79,7 @@ class Admin
         }
         $json = json_decode($json, true);
         $sql = "SELECT
+        sa_duty_schedule.duty_schedule_id,
         student_assistant.sa_id,
         student_assistant.student_id,
         CONCAT(student_assistant.lastname, ', ', student_assistant.firstname) AS sa_fullname,
