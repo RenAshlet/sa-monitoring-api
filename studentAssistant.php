@@ -102,19 +102,29 @@ class StudentAssistant
         sa.sa_id,
         CONCAT(sa.firstname, ' ', sa.lastname) AS sa_fullname,
         CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')) AS time_schedule,
+        TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
         DATE_FORMAT(tt.date, '%M %d, %Y') AS formatted_date,
         d.day_name,
-        TIME_FORMAT(tt.time_in, '%h:%i %p') AS time_in,   
-        TIME_FORMAT(tt.time_out, '%h:%i %p') AS time_out,      
-        tt.approved_status,
-        tt.status,
+        TIME_FORMAT(tt.time_in, '%h:%i %p') AS time_in,     
+        TIME_FORMAT(tt.time_out, '%h:%i %p') AS time_out,  
+        approved_status.approved_status_name,
+        status.status_name,
         COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
-        FROM student_assistant sa
-        LEFT JOIN time_track tt ON sa.sa_id = tt.sa_id
+        FROM time_track tt
+        LEFT JOIN student_assistant sa ON tt.sa_id = sa.sa_id
         LEFT JOIN sa_duty_schedule sds ON tt.duty_schedule_id = sds.duty_schedule_id
         LEFT JOIN days d ON sds.day_id = d.day_id
+        LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
+        LEFT JOIN status ON tt.status = status.status_id
         LEFT JOIN admin ON tt.approved_by = admin.admin_id
-        WHERE sa.sa_id = :saId";
+        WHERE sa.sa_id = :saId
+        ORDER BY 
+        CASE 
+        WHEN approved_status.approved_status_name = 'Pending' THEN 1
+        WHEN approved_status.approved_status_name = 'Approved' THEN 2
+        WHEN approved_status.approved_status_name = 'Rejected' THEN 3
+        ELSE 4
+        END, tt.track_id DESC";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':saId', $json['saId']);
         $stmt->execute();
@@ -196,13 +206,22 @@ class StudentAssistant
         sa_leave_request.leave_type,
         sa_leave_request.reason,
         DATE_FORMAT(sa_leave_request.date, '%M %d, %Y') AS formatted_date,
-        sa_leave_request.approved_status,
-        CONCAT(admin.firstname, ' ', admin.lastname) AS admin_fullname
+        approved_status.approved_status_name,
+        COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM sa_leave_request
         LEFT JOIN student_assistant ON sa_leave_request.sa_id = student_assistant.sa_id
         LEFT JOIN admin ON sa_leave_request.approved_by = admin.admin_id
+        LEFT JOIN approved_status ON sa_leave_request.approved_status = approved_status.approved_status_id
         WHERE student_assistant.sa_id = :saId
-        AND sa_leave_request.date = :date";
+        AND sa_leave_request.date = :date
+        ORDER BY 
+        CASE 
+            WHEN sa_leave_request.approved_status = 'Pending' THEN 1
+            WHEN sa_leave_request.approved_status = 'Approved' THEN 2
+            WHEN sa_leave_request.approved_status = 'Rejected' THEN 3
+            ELSE 4
+        END, 
+        sa_leave_request.leave_id DESC";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':saId', $json['saId']);
         $stmt->bindParam(':date', $json['date']);

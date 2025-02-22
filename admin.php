@@ -38,7 +38,7 @@ class Admin
             if ($returnValue === 1) {
                 $logData = [
                     'adminId' => $json['adminId'],
-                    'action' => 'Added new admin: ' . $json['firstname'] . ' ' . $json['lastname']
+                    'action' => 'A new admin has been added: ' . $json['firstname'] . ' ' . $json['lastname']
                 ];
                 $this->activityLog(json_encode($logData));
             }
@@ -124,7 +124,7 @@ class Admin
             if ($returnValue === 1) {
                 $logData = [
                     'adminId' => $json['adminId'],
-                    'action' => 'Added new student assistant: ' . $json['firstname'] . ' ' . $json['lastname']
+                    'action' => 'A new student assistant has been added: ' . $json['firstname'] . ' ' . $json['lastname']
                 ];
                 $this->activityLog(json_encode($logData));
             }
@@ -185,6 +185,46 @@ class Admin
 
         try {
             $sql = "SELECT * FROM days ORDER BY day_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+
+        return json_encode($result);
+    }
+
+    function displayApprovedStatus($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+
+        try {
+            $sql = "SELECT * FROM `approved_status` ORDER BY approved_status_id ASC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+
+        return json_encode($result);
+    }
+
+    function displayStatus($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+
+        try {
+            $sql = "SELECT * FROM `status` ORDER BY status_id ASC";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -292,10 +332,9 @@ class Admin
         return json_encode($returnValue);
     }
 
-    //for displaying student assistant's time in
     function displaySaTimeIn($json)
     {
-        //{"timeInId":15}
+        // {"timeInId":15}
         include 'connection.php';
         $json = json_decode($json, true);
         $sql = "SELECT 
@@ -308,40 +347,46 @@ class Admin
         d.day_name,
         TIME_FORMAT(tt.time_in, '%h:%i %p') AS time_in,     
         TIME_FORMAT(tt.time_out, '%h:%i %p') AS time_out,  
-        tt.approved_status,
-        tt.status,
-        CONCAT(admin.firstname, ' ', admin.lastname) AS admin_fullname
+        approved_status.approved_status_name,
+        status.status_name,
+        COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM time_track tt
         LEFT JOIN student_assistant sa ON tt.sa_id = sa.sa_id
         LEFT JOIN sa_duty_schedule sds ON tt.duty_schedule_id = sds.duty_schedule_id
         LEFT JOIN days d ON sds.day_id = d.day_id
+        LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
+        LEFT JOIN status ON tt.status = status.status_id
         LEFT JOIN admin ON tt.approved_by = admin.admin_id";
         if (!empty($json['timeInId'])) {
             $sql .= " WHERE tt.track_id = :timeInId";
         }
+        $sql .= " ORDER BY 
+            CASE 
+                WHEN approved_status.approved_status_name = 'Pending' THEN 1
+                WHEN approved_status.approved_status_name = 'Approved' THEN 2
+                WHEN approved_status.approved_status_name = 'Rejected' THEN 3
+                ELSE 4
+            END, 
+            tt.track_id DESC";
         $stmt = $conn->prepare($sql);
         if (!empty($json['timeInId'])) {
-            $stmt->bindParam(':timeInId', $json['timeInId']);
+            $stmt->bindParam(':timeInId', $json['timeInId'], PDO::PARAM_INT);
         }
+
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         unset($conn);
         unset($stmt);
+
         return json_encode($result);
     }
 
-    //for time in approval
     function TimeInApprove($json)
     {
-        //{"approvedStatus":"Approved", "status":"Present", "adminId":"1", "time_in_id":"1"}
         include 'connection.php';
         $json = json_decode($json, true);
-        // Fetch the student assistant details (fullname) for logging
-        $getSaNameSql = "SELECT sa_id, CONCAT(firstname, ' ', lastname) AS sa_fullname FROM student_assistant WHERE sa_id IN (SELECT sa_id FROM time_track WHERE track_id = :time_in_id)";
-        $getSaNameStmt = $conn->prepare($getSaNameSql);
-        $getSaNameStmt->bindParam(':time_in_id', $json['time_in_id']);
-        $getSaNameStmt->execute();
-        $saData = $getSaNameStmt->fetch(PDO::FETCH_ASSOC);
+
         // Update the time track record
         $sql = "UPDATE time_track SET approved_status = :approvedStatus, status = :status, approved_by = :adminId WHERE track_id = :time_in_id";
         $stmt = $conn->prepare($sql);
@@ -350,33 +395,61 @@ class Admin
         $stmt->bindParam(':adminId', $json['adminId']);
         $stmt->bindParam(':time_in_id', $json['time_in_id']);
         $stmt->execute();
-        // Check if the update was successful
+
         $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
-        // If the update is successful, log the action
+
         if ($returnValue === 1) {
-            // Format the log message based on the approved_status
-            if ($json['approvedStatus'] === 'Approved') {
+            // Fetch student assistant ID from time_track
+            $query = "SELECT sa_id, approved_status, status FROM time_track WHERE track_id = :time_in_id";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':time_in_id', $json['time_in_id']);
+            $stmt->execute();
+            $timeTrackData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($timeTrackData) {
+                $saId = $timeTrackData['sa_id'];
+                $approvedStatusId = $timeTrackData['approved_status'];
+                $statusId = $timeTrackData['status'];
+
+                // Fetch student assistant's name
+                $query = "SELECT firstname, lastname FROM student_assistant WHERE sa_id = :sa_id";
+                $stmt = $conn->prepare($query);
+                $stmt->bindParam(':sa_id', $saId);
+                $stmt->execute();
+                $saData = $stmt->fetch(PDO::FETCH_ASSOC);
+                $saName = ($saData) ? $saData['firstname'] . ' ' . $saData['lastname'] : "Unknown Student";
+
+                // Fetch approved status name
+                $query = "SELECT approved_status_name FROM approved_status WHERE approved_status_id = :approvedStatus";
+                $stmt = $conn->prepare($query);
+                $stmt->bindParam(':approvedStatus', $approvedStatusId);
+                $stmt->execute();
+                $approvedStatus = $stmt->fetchColumn() ?: "Unknown Status";
+
+                // Fetch status name
+                $query = "SELECT status_name FROM status WHERE status_id = :status";
+                $stmt = $conn->prepare($query);
+                $stmt->bindParam(':status', $statusId);
+                $stmt->execute();
+                $currentStatus = $stmt->fetchColumn() ?: "Unknown Status";
+
+                // Log with student assistant name, approved status, and current status
                 $logData = [
                     'adminId' => $json['adminId'],
-                    'action' => 'Time-in for Student Assistant ' . $saData['sa_fullname'] . ' has been Approved. Current Status: ' . $json['status']
+                    'action'  => "Time-in for student assistant $saName has been $approvedStatus. Current Status: $currentStatus"
                 ];
-            } elseif ($json['approvedStatus'] === 'Rejected') {
-                $logData = [
-                    'adminId' => $json['adminId'],
-                    'action' => 'Time-in for Student Assistant ' . $saData['sa_fullname'] . ' has been Rejected. Current Status: ' . $json['status']
-                ];
+                $logResult = $this->activityLog(json_encode($logData));
             }
-            // Log the action
-            $logResult = $this->activityLog(json_encode($logData));
         }
+
         unset($conn);
         unset($stmt);
         return json_encode($returnValue);
     }
 
-    //for displaying student assistant's leave request
     function displaySaLeaveRequest($json)
     {
+        //{"leaveId":9}
         include 'connection.php';
         $json = json_decode($json, true);
         $sql = "SELECT
@@ -385,87 +458,74 @@ class Admin
         sa_leave_request.leave_type,
         sa_leave_request.reason,
         DATE_FORMAT(sa_leave_request.date, '%M %d, %Y') AS formatted_date,
-        sa_leave_request.approved_status,
-        CONCAT(admin.firstname, ' ', admin.lastname) AS admin_fullname
-        FROM sa_leave_request
-        LEFT JOIN student_assistant ON sa_leave_request.sa_id = student_assistant.sa_id
-        LEFT JOIN admin ON sa_leave_request.approved_by = admin.admin_id";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        unset($conn);
-        unset($stmt);
-        return json_encode($result);
-    }
-
-    //for displaying student assistant's leave request by id
-    function displaySaLeaveRequestById($json)
-    {
-        include 'connection.php';
-        $json = json_decode($json, true);
-        $sql = "SELECT
-        sa_leave_request.leave_id,
-        CONCAT(student_assistant.firstname, ' ', student_assistant.lastname) AS sa_fullname,
-        sa_leave_request.leave_type,
-        sa_leave_request.reason,
-        DATE_FORMAT(sa_leave_request.date, '%M %d, %Y') AS formatted_date,
-        sa_leave_request.approved_status,
-        CONCAT(admin.firstname, ' ', admin.lastname) AS admin_fullname
+        approved_status.approved_status_name,
+        COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM sa_leave_request
         LEFT JOIN student_assistant ON sa_leave_request.sa_id = student_assistant.sa_id
         LEFT JOIN admin ON sa_leave_request.approved_by = admin.admin_id
-        WHERE sa_leave_request.leave_id = :leaveId";
+        LEFT JOIN approved_status ON sa_leave_request.approved_status = approved_status.approved_status_id";
+        if (!empty($json['leaveId'])) {
+            $sql .= " WHERE sa_leave_request.leave_id  = :leaveId";
+        }
+        $sql .= " ORDER BY 
+        CASE 
+        WHEN approved_status.approved_status_name = 'Pending' THEN 1
+        WHEN approved_status.approved_status_name = 'Approved' THEN 2
+        WHEN approved_status.approved_status_name = 'Rejected' THEN 3
+        ELSE 4
+        END, sa_leave_request.leave_id DESC;";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':leaveId', $json['leaveId']);
+        if (!empty($json['leaveId'])) {
+            $stmt->bindParam(':leaveId', $json['leaveId'], PDO::PARAM_INT);
+        }
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         unset($conn);
         unset($stmt);
+
         return json_encode($result);
     }
 
     //for approving the student assistant's leave request
     function ApprovedLeaveRequest($json)
     {
-        //{"approvedStatus":"Approved", "adminId":"1", "leaveId":"1"}
+        //{"approvedStatus":"2", "adminId":"1", "leaveId":"9"}
         include 'connection.php';
         $json = json_decode($json, true);
-
-        // Fetch the student assistant details (fullname) for logging
-        $getSaNameSql = "SELECT sa_id, CONCAT(firstname, ' ', lastname) AS sa_fullname FROM student_assistant WHERE sa_id IN (SELECT sa_id FROM sa_leave_request WHERE leave_id = :leaveId)";
-        $getSaNameStmt = $conn->prepare($getSaNameSql);
-        $getSaNameStmt->bindParam(':leaveId', $json['leaveId']);
-        $getSaNameStmt->execute();
-        $saData = $getSaNameStmt->fetch(PDO::FETCH_ASSOC);
-
-        // Update the leave request record
         $sql = "UPDATE sa_leave_request SET approved_status = :approvedStatus, approved_by = :adminId WHERE leave_id = :leaveId";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':approvedStatus', $json['approvedStatus']);
         $stmt->bindParam(':adminId', $json['adminId']);
         $stmt->bindParam(':leaveId', $json['leaveId']);
         $stmt->execute();
-
-        // Check if the update was successful
         $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
-
-        // If the update is successful, log the action
         if ($returnValue === 1) {
-            // Format the log message based on the approved_status
-            if ($json['approvedStatus'] === 'Approved') {
+            $query = "SELECT sa_id, approved_status FROM sa_leave_request WHERE leave_id = :leaveId";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':leaveId', $json['leaveId']);
+            $stmt->execute();
+            $leaveRequestData = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($leaveRequestData) {
+                $saId = $leaveRequestData['sa_id'];
+                $approvedStatusId = $leaveRequestData['approved_status'];
+                $query = "SELECT firstname, lastname FROM student_assistant WHERE sa_id = :sa_id";
+                $stmt = $conn->prepare($query);
+                $stmt->bindParam(':sa_id', $saId);
+                $stmt->execute();
+                $saData = $stmt->fetch(PDO::FETCH_ASSOC);
+                $saName = ($saData) ? $saData['firstname'] . ' ' . $saData['lastname'] : "Unknown Student";
+                $query = "SELECT approved_status_name FROM approved_status WHERE approved_status_id = :approvedStatus";
+                $stmt = $conn->prepare($query);
+                $stmt->bindParam(':approvedStatus', $approvedStatusId);
+                $stmt->execute();
+                $approvedStatus = $stmt->fetchColumn() ?: "Unknown Status";
                 $logData = [
                     'adminId' => $json['adminId'],
-                    'action' => 'Leave Request for Student Assistant ' . $saData['sa_fullname'] . ' has been Approved.'
+                    'action'  => "The leave request for student assistant $saName has been $approvedStatus."
                 ];
-            } elseif ($json['approvedStatus'] === 'Rejected') {
-                $logData = [
-                    'adminId' => $json['adminId'],
-                    'action' => 'Leave Request for Student Assistant ' . $saData['sa_fullname'] . ' has been Rejected.'
-                ];
+                $logResult = $this->activityLog(json_encode($logData));
             }
-
-            // Log the action
-            $logResult = $this->activityLog(json_encode($logData));
         }
 
         unset($conn);
@@ -520,6 +580,12 @@ switch ($operation) {
     case "displayDays":
         echo $admin->displayDays($json);
         break;
+    case "displayApprovedStatus":
+        echo $admin->displayApprovedStatus($json);
+        break;
+    case "displayStatus":
+        echo $admin->displayStatus($json);
+        break;
     case "addDutyHours":
         echo $admin->addDutyHours($json);
         break;
@@ -537,9 +603,6 @@ switch ($operation) {
         break;
     case "displaySaLeaveRequest":
         echo $admin->displaySaLeaveRequest($json);
-        break;
-    case "displaySaLeaveRequestById":
-        echo $admin->displaySaLeaveRequestById($json);
         break;
     case "ApprovedLeaveRequest":
         echo $admin->ApprovedLeaveRequest($json);
