@@ -38,7 +38,7 @@ class Admin
             if ($returnValue === 1) {
                 $logData = [
                     'adminId' => $json['adminId'],
-                    'action' => 'A new admin has been added: ' . $json['firstname'] . ' ' . $json['lastname']
+                    'action' => 'New admin added: ' . $json['firstname'] . ' ' . $json['lastname']
                 ];
                 $this->activityLog(json_encode($logData));
             }
@@ -332,6 +332,7 @@ class Admin
         return json_encode($returnValue);
     }
 
+    //for displaying student assistant's time in
     function displaySaTimeIn($json)
     {
         // {"timeInId":15}
@@ -382,6 +383,7 @@ class Admin
         return json_encode($result);
     }
 
+    //for approving student assistant's time in
     function TimeInApprove($json)
     {
         include 'connection.php';
@@ -447,6 +449,7 @@ class Admin
         return json_encode($returnValue);
     }
 
+    //for displaying student assitant's leave request
     function displaySaLeaveRequest($json)
     {
         //{"leaveId":9}

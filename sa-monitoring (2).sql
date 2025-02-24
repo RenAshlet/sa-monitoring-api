@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 21, 2025 at 03:13 AM
+-- Generation Time: Feb 22, 2025 at 04:50 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -55,20 +55,25 @@ CREATE TABLE `admin_activity_log` (
   `timestamp` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `admin_activity_log`
+-- Table structure for table `approved_status`
 --
 
-INSERT INTO `admin_activity_log` (`log_id`, `admin_id`, `action`, `timestamp`) VALUES
-(11, 1, 'Added new student assistant: Ren Babaylan', '2025-02-19 09:54:00'),
-(12, 1, 'Added new student assistant: Nono Bagtasos', '2025-02-19 09:59:47'),
-(13, 1, 'Assigned duty schedule to Nono Bagtasos on Monday, Tuesday, Wednesday, Thursday, Friday, Saturday from 07:00 AM to 10:00 AM for 90 hours', '2025-02-19 10:04:26'),
-(14, 1, 'Added new student assistant: Scott Salvana', '2025-02-19 10:43:12'),
-(15, 1, 'Added new student assistant: Kenneth Abalo', '2025-02-19 10:45:08'),
-(16, 1, 'Added new student assistant: Arvyn Ucang', '2025-02-19 10:52:47'),
-(17, 1, 'Added new duty hours: 30 hours', '2025-02-19 12:04:43'),
-(18, 1, 'Assigned duty schedule to Kenneth Abalo on Monday, Tuesday, Thursday, Friday, Saturday, Wednesday from 08:00 AM to 01:00 PM for 90 hours', '2025-02-19 14:06:12'),
-(19, 1, 'Added new duty hours: 180 hours', '2025-02-19 14:29:11');
+CREATE TABLE `approved_status` (
+  `approved_status_id` int(11) NOT NULL,
+  `approved_status_name` varchar(25) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `approved_status`
+--
+
+INSERT INTO `approved_status` (`approved_status_id`, `approved_status_name`) VALUES
+(1, 'Pending'),
+(2, 'Approved'),
+(3, 'Rejected');
 
 -- --------------------------------------------------------
 
@@ -111,8 +116,7 @@ CREATE TABLE `duty_hours` (
 INSERT INTO `duty_hours` (`duty_hours_id`, `required_duty_hours`) VALUES
 (8, 30),
 (6, 90),
-(7, 120),
-(10, 180);
+(7, 120);
 
 -- --------------------------------------------------------
 
@@ -130,19 +134,6 @@ CREATE TABLE `sa_duty_schedule` (
   `total_duty_hours` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `sa_duty_schedule`
---
-
-INSERT INTO `sa_duty_schedule` (`duty_schedule_id`, `sa_id`, `day_id`, `start_time`, `end_time`, `duty_hours_id`, `total_duty_hours`) VALUES
-(54, 32, 1, '07:00:00', '10:00:00', 6, 0.00),
-(55, 32, 2, '07:00:00', '10:00:00', 6, 0.00),
-(56, 32, 3, '07:00:00', '10:00:00', 6, 0.00),
-(57, 32, 4, '07:00:00', '10:00:00', 6, 0.00),
-(58, 32, 5, '07:00:00', '10:00:00', 6, 0.00),
-(59, 32, 6, '07:00:00', '10:00:00', 6, 0.00),
-(60, 34, 3, '08:00:00', '13:00:00', 6, 0.00);
-
 -- --------------------------------------------------------
 
 --
@@ -155,9 +146,29 @@ CREATE TABLE `sa_leave_request` (
   `leave_type` varchar(50) NOT NULL,
   `reason` text DEFAULT NULL,
   `date` date DEFAULT NULL,
-  `approved_status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `approved_status` int(11) NOT NULL DEFAULT 1,
   `approved_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `status`
+--
+
+CREATE TABLE `status` (
+  `status_id` int(11) NOT NULL,
+  `status_name` varchar(25) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `status`
+--
+
+INSERT INTO `status` (`status_id`, `status_name`) VALUES
+(1, 'Present'),
+(2, 'Late'),
+(3, 'Absent');
 
 -- --------------------------------------------------------
 
@@ -174,17 +185,6 @@ CREATE TABLE `student_assistant` (
   `password` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `student_assistant`
---
-
-INSERT INTO `student_assistant` (`sa_id`, `firstname`, `lastname`, `student_id`, `username`, `password`) VALUES
-(31, 'Ren', 'Babaylan', '022122034021', '022122034021', 'babaylan'),
-(32, 'Nono', 'Bagtasos', '022122034022', '022122034022', 'bagtasos'),
-(33, 'Scott', 'Salvana', '022122034023', '022122034023', 'salvana'),
-(34, 'Kenneth', 'Abalo', '022122034024', '022122034024', 'abalo'),
-(35, 'Arvyn', 'Ucang', '022122034025', '022122034025', 'ucang');
-
 -- --------------------------------------------------------
 
 --
@@ -198,17 +198,10 @@ CREATE TABLE `time_track` (
   `date` date DEFAULT NULL,
   `time_in` time DEFAULT NULL,
   `time_out` time DEFAULT NULL,
-  `approved_status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
-  `status` enum('Absent','Present','Late') DEFAULT 'Absent',
+  `approved_status` int(11) NOT NULL DEFAULT 1,
+  `status` int(11) NOT NULL DEFAULT 3,
   `approved_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `time_track`
---
-
-INSERT INTO `time_track` (`track_id`, `sa_id`, `duty_schedule_id`, `date`, `time_in`, `time_out`, `approved_status`, `status`, `approved_by`) VALUES
-(31, 32, 56, '2025-02-19', '14:12:15', NULL, 'Pending', 'Absent', NULL);
 
 --
 -- Triggers `time_track`
@@ -245,6 +238,12 @@ ALTER TABLE `admin_activity_log`
   ADD KEY `admin_id` (`admin_id`);
 
 --
+-- Indexes for table `approved_status`
+--
+ALTER TABLE `approved_status`
+  ADD PRIMARY KEY (`approved_status_id`);
+
+--
 -- Indexes for table `days`
 --
 ALTER TABLE `days`
@@ -273,7 +272,14 @@ ALTER TABLE `sa_duty_schedule`
 ALTER TABLE `sa_leave_request`
   ADD PRIMARY KEY (`leave_id`),
   ADD KEY `sa_id` (`sa_id`),
-  ADD KEY `approved_by` (`approved_by`);
+  ADD KEY `approved_by` (`approved_by`),
+  ADD KEY `approved_status` (`approved_status`);
+
+--
+-- Indexes for table `status`
+--
+ALTER TABLE `status`
+  ADD PRIMARY KEY (`status_id`);
 
 --
 -- Indexes for table `student_assistant`
@@ -290,7 +296,9 @@ ALTER TABLE `time_track`
   ADD PRIMARY KEY (`track_id`),
   ADD KEY `sa_id` (`sa_id`),
   ADD KEY `duty_schedule_id` (`duty_schedule_id`),
-  ADD KEY `approved_by` (`approved_by`);
+  ADD KEY `approved_by` (`approved_by`),
+  ADD KEY `approved_status` (`approved_status`),
+  ADD KEY `status` (`status`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -300,13 +308,19 @@ ALTER TABLE `time_track`
 -- AUTO_INCREMENT for table `admin`
 --
 ALTER TABLE `admin`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `admin_activity_log`
 --
 ALTER TABLE `admin_activity_log`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
+
+--
+-- AUTO_INCREMENT for table `approved_status`
+--
+ALTER TABLE `approved_status`
+  MODIFY `approved_status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `days`
@@ -318,31 +332,37 @@ ALTER TABLE `days`
 -- AUTO_INCREMENT for table `duty_hours`
 --
 ALTER TABLE `duty_hours`
-  MODIFY `duty_hours_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `duty_hours_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `sa_duty_schedule`
 --
 ALTER TABLE `sa_duty_schedule`
-  MODIFY `duty_schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `duty_schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT for table `sa_leave_request`
 --
 ALTER TABLE `sa_leave_request`
-  MODIFY `leave_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `leave_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `status`
+--
+ALTER TABLE `status`
+  MODIFY `status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `student_assistant`
 --
 ALTER TABLE `student_assistant`
-  MODIFY `sa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `sa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `time_track`
 --
 ALTER TABLE `time_track`
-  MODIFY `track_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `track_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- Constraints for dumped tables
@@ -367,7 +387,8 @@ ALTER TABLE `sa_duty_schedule`
 --
 ALTER TABLE `sa_leave_request`
   ADD CONSTRAINT `sa_leave_request_ibfk_1` FOREIGN KEY (`sa_id`) REFERENCES `student_assistant` (`sa_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sa_leave_request_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `admin` (`admin_id`);
+  ADD CONSTRAINT `sa_leave_request_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `admin` (`admin_id`),
+  ADD CONSTRAINT `sa_leave_request_ibfk_3` FOREIGN KEY (`approved_status`) REFERENCES `approved_status` (`approved_status_id`);
 
 --
 -- Constraints for table `time_track`
@@ -375,7 +396,9 @@ ALTER TABLE `sa_leave_request`
 ALTER TABLE `time_track`
   ADD CONSTRAINT `time_track_ibfk_1` FOREIGN KEY (`sa_id`) REFERENCES `student_assistant` (`sa_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `time_track_ibfk_2` FOREIGN KEY (`duty_schedule_id`) REFERENCES `sa_duty_schedule` (`duty_schedule_id`),
-  ADD CONSTRAINT `time_track_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `admin` (`admin_id`);
+  ADD CONSTRAINT `time_track_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `admin` (`admin_id`),
+  ADD CONSTRAINT `time_track_ibfk_4` FOREIGN KEY (`approved_status`) REFERENCES `approved_status` (`approved_status_id`),
+  ADD CONSTRAINT `time_track_ibfk_5` FOREIGN KEY (`status`) REFERENCES `status` (`status_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
