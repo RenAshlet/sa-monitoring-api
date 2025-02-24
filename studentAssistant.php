@@ -117,14 +117,7 @@ class StudentAssistant
         LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
         LEFT JOIN status ON tt.status = status.status_id
         LEFT JOIN admin ON tt.approved_by = admin.admin_id
-        WHERE sa.sa_id = :saId
-        ORDER BY 
-        CASE 
-        WHEN approved_status.approved_status_name = 'Pending' THEN 1
-        WHEN approved_status.approved_status_name = 'Approved' THEN 2
-        WHEN approved_status.approved_status_name = 'Rejected' THEN 3
-        ELSE 4
-        END, tt.track_id DESC";
+        WHERE sa.sa_id = :saId";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':saId', $json['saId']);
         $stmt->execute();
@@ -231,6 +224,37 @@ class StudentAssistant
         unset($stmt);
         return json_encode($result);
     }
+
+    function generateSaQRCode($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+        $sql = "SELECT sa.sa_id, 
+                       CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname, 
+                       IFNULL(GROUP_CONCAT(d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names, 
+                       IFNULL(CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule
+                FROM student_assistant sa
+                LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
+                LEFT JOIN days d ON sds.day_id = d.day_id
+                WHERE sa.sa_id = :saId
+                GROUP BY sa.sa_id, sa.lastname, sa.firstname";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':saId', $json['saId']);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        unset($conn);
+        unset($stmt);
+
+        if ($result) {
+            return json_encode([
+                'qrcodeData' => $result // No need to JSON encode again
+            ]);
+        } else {
+            return json_encode(['error' => 'No data found']);
+        }
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -263,5 +287,8 @@ switch ($operation) {
         break;
     case "displayLeaveRequest":
         echo $sassistant->displayLeaveRequest($json);
+        break;
+    case "generateSaQRCode":
+        echo $sassistant->generateSaQRCode($json);
         break;
 }
