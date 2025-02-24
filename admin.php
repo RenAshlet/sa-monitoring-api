@@ -462,6 +462,7 @@ class Admin
         sa_leave_request.reason,
         DATE_FORMAT(sa_leave_request.date, '%M %d, %Y') AS formatted_date,
         approved_status.approved_status_name,
+        COALESCE(NULLIF(sa_leave_request.admin_comment, ''), 'no comment') AS admin_comment,
         COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM sa_leave_request
         LEFT JOIN student_assistant ON sa_leave_request.sa_id = student_assistant.sa_id
@@ -496,10 +497,11 @@ class Admin
         //{"approvedStatus":"2", "adminId":"1", "leaveId":"9"}
         include 'connection.php';
         $json = json_decode($json, true);
-        $sql = "UPDATE sa_leave_request SET approved_status = :approvedStatus, approved_by = :adminId WHERE leave_id = :leaveId";
+        $sql = "UPDATE sa_leave_request SET approved_status = :approvedStatus, approved_by = :adminId, admin_comment = :adminComment WHERE leave_id = :leaveId";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':approvedStatus', $json['approvedStatus']);
         $stmt->bindParam(':adminId', $json['adminId']);
+        $stmt->bindParam(':adminComment', $json['adminComment']);
         $stmt->bindParam(':leaveId', $json['leaveId']);
         $stmt->execute();
         $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
@@ -549,6 +551,19 @@ class Admin
         FROM admin_activity_log 
         JOIN admin ON admin_activity_log.admin_id = admin.admin_id
         ORDER BY admin_activity_log.timestamp DESC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        unset($conn);
+        unset($stmt);
+        return json_encode($result);
+    }
+
+    function displayTotalSA($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+        $sql = "SELECT COUNT(*) AS student_assistant FROM `student_assistant`";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -612,5 +627,8 @@ switch ($operation) {
         break;
     case "displayActivityLog":
         echo $admin->displayActivityLog($json);
+        break;
+    case "displayTotalSA":
+        echo $admin->displayTotalSA($json);
         break;
 }

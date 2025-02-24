@@ -200,6 +200,7 @@ class StudentAssistant
         sa_leave_request.reason,
         DATE_FORMAT(sa_leave_request.date, '%M %d, %Y') AS formatted_date,
         approved_status.approved_status_name,
+        COALESCE(NULLIF(sa_leave_request.admin_comment, ''), 'no comment') AS admin_comment,
         COALESCE(CONCAT(admin.firstname, ' ', admin.lastname), 'waiting to be approved') AS admin_fullname
         FROM sa_leave_request
         LEFT JOIN student_assistant ON sa_leave_request.sa_id = student_assistant.sa_id
