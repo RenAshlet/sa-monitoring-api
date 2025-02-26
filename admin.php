@@ -4,7 +4,7 @@ header("Access-Control-Allow-Origin: *");
 
 class Admin
 {
-
+    
     //admin can also add other admin
     function createAdmin($json)
     {
@@ -543,6 +543,11 @@ class Admin
     {
         include 'connection.php';
         $json = json_decode($json, true);
+
+        $limit = isset($json['limit']) ? intval($json['limit']) : 10; // Default limit: 10
+        $page = isset($json['page']) ? intval($json['page']) : 1; // Default page: 1
+        $offset = ($page - 1) * $limit; // Calculate offset
+
         $sql = "SELECT 
         admin_activity_log.log_id, 
         admin_activity_log.action, 
@@ -550,25 +555,133 @@ class Admin
         CONCAT(admin.firstname, ' ', admin.lastname) AS admin_name 
         FROM admin_activity_log 
         JOIN admin ON admin_activity_log.admin_id = admin.admin_id
-        ORDER BY admin_activity_log.timestamp DESC";
+        ORDER BY admin_activity_log.timestamp DESC
+        LIMIT :limit OFFSET :offset";
+
         $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Get total count for pagination
+        $countSql = "SELECT COUNT(*) AS total FROM admin_activity_log";
+        $countStmt = $conn->prepare($countSql);
+        $countStmt->execute();
+        $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+        $totalRecords = $countResult['total'];
+
         unset($conn);
         unset($stmt);
-        return json_encode($result);
+        unset($countStmt);
+
+        return json_encode([
+            'logs' => $result,
+            'totalRecords' => $totalRecords,
+            'limit' => $limit,
+            'page' => $page
+        ]);
     }
+
+    // function displayTotalSA($json)
+    // {
+    //     include 'connection.php';
+    //     $json = json_decode($json, true);
+    //     try {
+    //         $sql = "SELECT COUNT(*) AS student_assistant FROM `student_assistant`";
+    //         $stmt = $conn->prepare($sql);
+    //         $stmt->execute();
+    //         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    //     } catch (PDOException $e) {
+    //         return json_encode(["error" => "Database error: " . $e->getMessage()]);
+    //     } finally {
+    //         unset($conn);
+    //         unset($stmt);
+    //     }
+
+    //     return json_encode($result);
+    // }
 
     function displayTotalSA($json)
     {
         include 'connection.php';
         $json = json_decode($json, true);
-        $sql = "SELECT COUNT(*) AS student_assistant FROM `student_assistant`";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        unset($conn);
-        unset($stmt);
+        try {
+            $sql = "SELECT 
+            sa.sa_id,
+            CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname,    
+            IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No work progress') AS total_duty_hours_formatted,
+            IFNULL(CONCAT(dh.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
+            FROM student_assistant sa
+            LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
+            LEFT JOIN days d ON sds.day_id = d.day_id
+            LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
+            GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.start_time, sds.end_time, dh.required_duty_hours
+            ORDER BY sa_fullname, sds.start_time, sds.end_time";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $countSql = "SELECT COUNT(*) AS student_assistant FROM `student_assistant`";
+            $countStmt = $conn->prepare($countSql);
+            $countStmt->execute();
+            $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+            return json_encode([
+                "count" => $countResult["student_assistant"],
+                "students" => $result
+            ]);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+    }
+
+    function displayTotalAdmin($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+        try {
+            $sql = "SELECT COUNT(*) AS admin FROM `admin`";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+
+        return json_encode($result);
+    }
+
+    function displayAttedancePie($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+        try {
+            $sql = "SELECT 
+            COUNT(CASE WHEN status.status_name = 'Present' THEN 1 END) AS total_present,
+            COUNT(CASE WHEN status.status_name = 'Late' THEN 1 END) AS total_late,
+            COUNT(CASE WHEN status.status_name = 'Absent' THEN 1 END) AS total_absent
+            FROM time_track tt
+            LEFT JOIN student_assistant sa ON tt.sa_id = sa.sa_id
+            LEFT JOIN sa_duty_schedule sds ON tt.duty_schedule_id = sds.duty_schedule_id
+            LEFT JOIN days d ON sds.day_id = d.day_id
+            LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
+            LEFT JOIN status ON tt.status = status.status_id
+            LEFT JOIN admin ON tt.approved_by = admin.admin_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return json_encode(["error" => "Database error: " . $e->getMessage()]);
+        } finally {
+            unset($conn);
+            unset($stmt);
+        }
+
         return json_encode($result);
     }
 }
@@ -630,5 +743,11 @@ switch ($operation) {
         break;
     case "displayTotalSA":
         echo $admin->displayTotalSA($json);
+        break;
+    case "displayTotalAdmin":
+        echo $admin->displayTotalAdmin($json);
+        break;
+    case "displayAttedancePie":
+        echo $admin->displayAttedancePie($json);
         break;
 }

@@ -26,12 +26,29 @@ class StudentAssistant
         //{"saId":1}
         include 'connection.php';
         $json = json_decode($json, true);
+        // $sql = "SELECT 
+        // sds.duty_schedule_id,
+        // d.day_id,
+        // sa.sa_id,
+        // CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname,    
+        // IFNULL(GROUP_CONCAT(d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
+        // IFNULL(CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
+        // IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No duty hours') AS total_duty_hours_formatted,
+        // IFNULL(CONCAT(ROUND(SUM(sds.total_duty_hours), 2), '/', dh.required_duty_hours, ' hours'), '0/No duty hours') AS rendered_vs_required,
+        // IFNULL(CONCAT(dh.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
+        // FROM student_assistant sa
+        // LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
+        // LEFT JOIN days d ON sds.day_id = d.day_id
+        // LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
+        // WHERE sa.sa_id = :saId
+        // GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.duty_schedule_id, dh.required_duty_hours
+        // ORDER BY sa_fullname, sds.start_time, sds.end_time";
         $sql = "SELECT 
         sds.duty_schedule_id,
         d.day_id,
         sa.sa_id,
         CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname,    
-        IFNULL(GROUP_CONCAT(d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
+        IFNULL(GROUP_CONCAT(DISTINCT d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
         IFNULL(CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
         IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No duty hours') AS total_duty_hours_formatted,
         IFNULL(CONCAT(ROUND(SUM(sds.total_duty_hours), 2), '/', dh.required_duty_hours, ' hours'), '0/No duty hours') AS rendered_vs_required,
@@ -41,7 +58,7 @@ class StudentAssistant
         LEFT JOIN days d ON sds.day_id = d.day_id
         LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
         WHERE sa.sa_id = :saId
-        GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.duty_schedule_id, dh.required_duty_hours
+        GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.start_time, sds.end_time, dh.required_duty_hours
         ORDER BY sa_fullname, sds.start_time, sds.end_time";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':saId', $json['saId']);
