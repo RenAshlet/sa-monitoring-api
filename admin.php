@@ -641,6 +641,8 @@ class Admin
     {
         include 'connection.php';
         $json = json_decode($json, true);
+        $start_date = $json['start_date'];
+        $end_date = $json['end_date'];
         try {
             $sql = "SELECT 
             COUNT(CASE WHEN status.status_name = 'Present' THEN 1 END) AS total_present,
@@ -652,8 +654,11 @@ class Admin
             LEFT JOIN days d ON sds.day_id = d.day_id
             LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
             LEFT JOIN status ON tt.status = status.status_id
-            LEFT JOIN admin ON tt.approved_by = admin.admin_id";
+            LEFT JOIN admin ON tt.approved_by = admin.admin_id
+            WHERE tt.date BETWEEN :start_date AND :end_date";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':start_date', $start_date);
+            $stmt->bindParam(':end_date', $end_date);
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
