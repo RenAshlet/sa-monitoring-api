@@ -6,7 +6,6 @@ class StudentAssistant
 {
 
     //for displaying days
-
     function displayDays($json)
     {
         include 'connection.php';

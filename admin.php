@@ -4,7 +4,7 @@ header("Access-Control-Allow-Origin: *");
 
 class Admin
 {
-    
+
     //admin can also add other admin
     function createAdmin($json)
     {
@@ -582,25 +582,6 @@ class Admin
             'page' => $page
         ]);
     }
-
-    // function displayTotalSA($json)
-    // {
-    //     include 'connection.php';
-    //     $json = json_decode($json, true);
-    //     try {
-    //         $sql = "SELECT COUNT(*) AS student_assistant FROM `student_assistant`";
-    //         $stmt = $conn->prepare($sql);
-    //         $stmt->execute();
-    //         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    //     } catch (PDOException $e) {
-    //         return json_encode(["error" => "Database error: " . $e->getMessage()]);
-    //     } finally {
-    //         unset($conn);
-    //         unset($stmt);
-    //     }
-
-    //     return json_encode($result);
-    // }
 
     function displayTotalSA($json)
     {
