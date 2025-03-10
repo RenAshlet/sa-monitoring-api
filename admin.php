@@ -145,11 +145,19 @@ class Admin
         if (!isset($conn)) {
             return json_encode(["error" => "Database connection failed"]);
         }
+
         $json = json_decode($json, true);
+
+        $limit = isset($json['limit']) ? intval($json['limit']) : 10; // Default limit: 10
+        $page = isset($json['page']) ? intval($json['page']) : 1; // Default page: 1
+        $offset = ($page - 1) * $limit; // Calculate offset
+
         $sql = "SELECT
         sa_duty_schedule.duty_schedule_id,
         student_assistant.sa_id,
-        student_assistant.student_id,
+        CONCAT(LEFT(REPLACE(student_assistant.student_id, '-', ''), 2), '-',  
+        MID(REPLACE(student_assistant.student_id, '-', ''), 3, 4), '-',
+        RIGHT(REPLACE(student_assistant.student_id, '-', ''), 6)) AS student_id,
         CONCAT(student_assistant.lastname, ', ', student_assistant.firstname) AS sa_fullname,
         IFNULL(GROUP_CONCAT(days.day_name ORDER BY days.day_id SEPARATOR ', '), 'No schedule') AS day_names,
         IFNULL(CONCAT(TIME_FORMAT(sa_duty_schedule.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sa_duty_schedule.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
@@ -158,22 +166,39 @@ class Admin
         LEFT JOIN sa_duty_schedule ON student_assistant.sa_id = sa_duty_schedule.sa_id
         LEFT JOIN days ON sa_duty_schedule.day_id = days.day_id
         LEFT JOIN duty_hours ON sa_duty_schedule.duty_hours_id = duty_hours.duty_hours_id";
+
         if (!empty($json['saId'])) {
             $sql .= " WHERE student_assistant.sa_id = :saId";
         }
+
         $sql .= " GROUP BY student_assistant.sa_id, sa_duty_schedule.start_time, 
                   sa_duty_schedule.end_time, duty_hours.required_duty_hours
-                  ORDER BY sa_fullname, sa_duty_schedule.start_time, sa_duty_schedule.end_time";
+                  ORDER BY sa_fullname, sa_duty_schedule.start_time, sa_duty_schedule.end_time
+                  LIMIT $limit OFFSET $offset";  // FIXED: No binding for LIMIT and OFFSET
+
         try {
             $stmt = $conn->prepare($sql);
             if (!empty($json['saId'])) {
-                $stmt->bindParam(':saId', $json['saId']);
+                $stmt->bindParam(':saId', $json['saId'], PDO::PARAM_INT);
             }
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return json_encode($result);
+
+            // Get total records for pagination
+            $countSql = "SELECT COUNT(DISTINCT student_assistant.sa_id) AS total FROM student_assistant";
+            $countStmt = $conn->prepare($countSql);
+            $countStmt->execute();
+            $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+            $totalRecords = $countResult['total'];
+
+            return json_encode([
+                "data" => $result,
+                "totalRecords" => $totalRecords,
+                "limit" => $limit,
+                "page" => $page
+            ]);
         } catch (PDOException $e) {
-            return json_encode(["error" => "Query execution failed"]);
+            return json_encode(["error" => "Query execution failed", "message" => $e->getMessage()]);
         }
     }
 
