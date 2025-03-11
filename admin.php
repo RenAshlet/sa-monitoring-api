@@ -97,6 +97,12 @@ class Admin
         try {
             $username = $json['studentId']; // Student ID as username
             $password = strtolower($json['lastname']); // Lowercase lastname as password
+            $email = $json['email'];
+
+            // Validate email format using PHP's built-in filter
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return json_encode(3); // Invalid email format
+            }
 
             // Check if the username already exists
             $checkSql = "SELECT COUNT(*) FROM student_assistant WHERE username = :username";
@@ -110,12 +116,13 @@ class Admin
             }
 
             // Insert new record
-            $sql = "INSERT INTO `student_assistant`(`firstname`, `lastname`, `student_id`, `username`, `password`)";
-            $sql .= " VALUES (:firstname, :lastname, :studentId, :username, :password)";
+            $sql = "INSERT INTO `student_assistant`(`firstname`, `lastname`, `student_id`, `email`, `username`, `password`)";
+            $sql .= " VALUES (:firstname, :lastname, :studentId, :email, :username, :password)";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':firstname', $json['firstname']);
             $stmt->bindParam(':lastname', $json['lastname']);
             $stmt->bindParam(':studentId', $json['studentId']);
+            $stmt->bindParam(':email', $email);
             $stmt->bindParam(':username', $username);
             $stmt->bindParam(':password', $password);
             $stmt->execute();
@@ -159,9 +166,11 @@ class Admin
         MID(REPLACE(student_assistant.student_id, '-', ''), 3, 4), '-',
         RIGHT(REPLACE(student_assistant.student_id, '-', ''), 6)) AS student_id,
         CONCAT(student_assistant.lastname, ', ', student_assistant.firstname) AS sa_fullname,
+        student_assistant.email,
         IFNULL(GROUP_CONCAT(days.day_name ORDER BY days.day_id SEPARATOR ', '), 'No schedule') AS day_names,
-        IFNULL(CONCAT(TIME_FORMAT(sa_duty_schedule.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sa_duty_schedule.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
-        IFNULL(CONCAT(duty_hours.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
+        CONCAT(TIME_FORMAT(sa_duty_schedule.start_time, '%h:%i %p')) AS start_time,
+        CONCAT(TIME_FORMAT(sa_duty_schedule.end_time, '%h:%i %p')) AS end_time,
+        IFNULL(CONCAT(duty_hours.required_duty_hours), 'No duty hours') AS required_duty_hours
         FROM student_assistant
         LEFT JOIN sa_duty_schedule ON student_assistant.sa_id = sa_duty_schedule.sa_id
         LEFT JOIN days ON sa_duty_schedule.day_id = days.day_id
@@ -174,7 +183,7 @@ class Admin
         $sql .= " GROUP BY student_assistant.sa_id, sa_duty_schedule.start_time, 
                   sa_duty_schedule.end_time, duty_hours.required_duty_hours
                   ORDER BY sa_fullname, sa_duty_schedule.start_time, sa_duty_schedule.end_time
-                  LIMIT $limit OFFSET $offset";  // FIXED: No binding for LIMIT and OFFSET
+                  LIMIT $limit OFFSET $offset";
 
         try {
             $stmt = $conn->prepare($sql);
@@ -266,24 +275,71 @@ class Admin
     //for adding a duty hours
     function addDutyHours($json)
     {
-        //{"requiedDutyHours":90}
         include 'connection.php';
         $json = json_decode($json, true);
-        $sql = "INSERT INTO `duty_hours`(`required_duty_hours`) VALUES (:requiedDutyHours)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':requiedDutyHours', $json['requiedDutyHours']);
-        $stmt->execute();
-        $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
-        if ($returnValue === 1) {
-            $logData = [
-                'adminId' => $json['adminId'],
-                'action' => 'Added new duty hours: ' . $json['requiedDutyHours'] . ' hours'
-            ];
-            $logResult = $this->activityLog(json_encode($logData));
+
+        if (!is_array($json)) {
+            return json_encode(0);
         }
+
+        $insertedCount = 0;
+        $alreadyExists = false;
+
+        foreach ($json as $entry) {
+            $requiredDutyHours = $entry['requiredDutyHours'];
+            $adminId = $entry['adminId'];
+
+            $checkResult = json_decode($this->checkDutyHours(json_encode(["requiredDutyHours" => $requiredDutyHours])), true);
+
+            if ($checkResult['exists']) {
+                $alreadyExists = true;
+                continue;
+            }
+
+            // Insert new duty hour
+            $sql = "INSERT INTO `duty_hours`(`required_duty_hours`) VALUES (:requiredDutyHours)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':requiredDutyHours', $requiredDutyHours);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                $insertedCount++;
+                $logData = [
+                    'adminId' => $adminId,
+                    'action' => 'Added new duty hours: ' . $requiredDutyHours . ' hours'
+                ];
+                $this->activityLog(json_encode($logData));
+            }
+        }
+
         unset($conn);
-        unset($stmt);
-        return json_encode($returnValue);
+
+        if ($insertedCount > 0) {
+            return json_encode(1);
+        } elseif ($alreadyExists) {
+            return json_encode(["exists" => true]);
+        } else {
+            return json_encode(0);
+        }
+    }
+
+    function checkDutyHours($json)
+    {
+        include 'connection.php';
+        $json = json_decode($json, true);
+
+        if (!isset($json['requiredDutyHours'])) {
+            return json_encode(["exists" => false]);
+        }
+        $requiredDutyHours = $json['requiredDutyHours'];
+        $checkSql = "SELECT COUNT(*) FROM `duty_hours` WHERE required_duty_hours = :requiredDutyHours";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bindParam(':requiredDutyHours', $requiredDutyHours);
+        $checkStmt->execute();
+        $exists = $checkStmt->fetchColumn() > 0;
+
+        unset($conn);
+        return json_encode(["exists" => $exists]);
     }
 
     //for displaying duty hours
@@ -306,6 +362,7 @@ class Admin
         // {"saId":5, "dayIds":[1,2,3], "startTime":"08:00:00", "endTime":"17:00:00", "dutyHours":1, "adminId":1}
         include 'connection.php';
         $json = json_decode($json, true);
+
         // Fetch the full name of the student assistant
         $getSaNameSql = "SELECT firstname, lastname FROM student_assistant WHERE sa_id = :saId";
         $getSaNameStmt = $conn->prepare($getSaNameSql);
@@ -313,6 +370,7 @@ class Admin
         $getSaNameStmt->execute();
         $saData = $getSaNameStmt->fetch(PDO::FETCH_ASSOC);
         $fullName = $saData['firstname'] . ' ' . $saData['lastname'];
+
         // Fetch the required duty hours from the duty_hours table
         $getDutyHoursSql = "SELECT required_duty_hours FROM duty_hours WHERE duty_hours_id = :dutyHours";
         $getDutyHoursStmt = $conn->prepare($getDutyHoursSql);
@@ -320,10 +378,12 @@ class Admin
         $getDutyHoursStmt->execute();
         $dutyHoursData = $getDutyHoursStmt->fetch(PDO::FETCH_ASSOC);
         $requiredDutyHours = $dutyHoursData ? $dutyHoursData['required_duty_hours'] : 'Unknown';
+
         // Prepare the insert statement
         $sql = "INSERT INTO `sa_duty_schedule`(`sa_id`, `day_id`, `start_time`, `end_time`, `duty_hours_id`) 
             VALUES (:saId, :dayId, :startTime, :endTime, :dutyHours)";
         $stmt = $conn->prepare($sql);
+
         // Loop through the days and insert the duty schedule
         foreach ($json['dayIds'] as $dayId) {
             $stmt->bindParam(':saId', $json['saId']);
@@ -333,15 +393,18 @@ class Admin
             $stmt->bindParam(':dutyHours', $json['dutyHours']);
             $stmt->execute();
         }
+
         // If the duty schedule is assigned successfully
         $returnValue = $stmt->rowCount() > 0 ? 1 : 0;
         if ($returnValue === 1) {
-            // Get the day names for the log
-            $getDayNamesSql = "SELECT day_name FROM days WHERE day_id ORDER by day_id IN (" . implode(',', $json['dayIds']) . ")";
+            // Get the correct day names for the activity log
+            $dayIds = array_map('intval', $json['dayIds']);
+            $getDayNamesSql = "SELECT day_name FROM days WHERE day_id IN (" . implode(',', $dayIds) . ") ORDER BY FIELD(day_id, " . implode(',', $dayIds) . ")";
             $getDayNamesStmt = $conn->prepare($getDayNamesSql);
             $getDayNamesStmt->execute();
             $dayNames = $getDayNamesStmt->fetchAll(PDO::FETCH_COLUMN);
-            // Prepare the log message
+
+            // Prepare the log message with only assigned days
             $dayList = implode(", ", $dayNames);
             $logData = [
                 'adminId' => $json['adminId'],
@@ -350,8 +413,11 @@ class Admin
                     ' to ' . date("h:i A", strtotime($json['endTime'])) .
                     ' for ' . $requiredDutyHours . ' hours'
             ];
+
+            // Save log
             $logResult = $this->activityLog(json_encode($logData));
         }
+
         unset($conn);
         unset($stmt);
         return json_encode($returnValue);
@@ -730,6 +796,9 @@ switch ($operation) {
         break;
     case "addDutyHours":
         echo $admin->addDutyHours($json);
+        break;
+    case "checkDutyHours":
+        echo $admin->checkDutyHours($json);
         break;
     case "displayDutyHours":
         echo $admin->displayDutyHours($json);
