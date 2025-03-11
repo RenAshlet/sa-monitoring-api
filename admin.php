@@ -170,7 +170,7 @@ class Admin
         IFNULL(GROUP_CONCAT(days.day_name ORDER BY days.day_id SEPARATOR ', '), 'No schedule') AS day_names,
         CONCAT(TIME_FORMAT(sa_duty_schedule.start_time, '%h:%i %p')) AS start_time,
         CONCAT(TIME_FORMAT(sa_duty_schedule.end_time, '%h:%i %p')) AS end_time,
-        IFNULL(CONCAT(duty_hours.required_duty_hours), 'No duty hours') AS required_duty_hours
+        IFNULL(CONCAT(duty_hours.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
         FROM student_assistant
         LEFT JOIN sa_duty_schedule ON student_assistant.sa_id = sa_duty_schedule.sa_id
         LEFT JOIN days ON sa_duty_schedule.day_id = days.day_id
@@ -433,8 +433,8 @@ class Admin
         tt.track_id,
         sa.sa_id,
         CONCAT(sa.firstname, ' ', sa.lastname) AS sa_fullname,
-        CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')) AS time_schedule,
-        TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
+         TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
+        TIME_FORMAT(sds.end_time, '%h:%i %p') AS time_end,
         DATE_FORMAT(tt.date, '%M %d, %Y') AS formatted_date,
         d.day_name,
         TIME_FORMAT(tt.time_in, '%h:%i %p') AS time_in,     
