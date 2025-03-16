@@ -1,6 +1,8 @@
 <?php
 header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+$allowed_origin = "http://localhost:3000";
+//$allowed_origin = "http://192.168.1.48:3000";
+header("Access-Control-Allow-Origin: $allowed_origin");
 
 class StudentAssistant
 {
