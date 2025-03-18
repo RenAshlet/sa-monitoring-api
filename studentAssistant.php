@@ -1,7 +1,8 @@
 <?php
 header('Content-Type: application/json');
 $allowed_origin = "http://localhost:3000";
-//$allowed_origin = "http://192.168.1.48:3000";
+//$allowed_origin = "http://192.168.1.48:3000";//
+//$allowed_origin = "http://192.168.137.111:3000";
 header("Access-Control-Allow-Origin: $allowed_origin");
 
 class StudentAssistant
@@ -27,39 +28,38 @@ class StudentAssistant
         //{"saId":1}
         include 'connection.php';
         $json = json_decode($json, true);
-        // $sql = "SELECT 
-        // sds.duty_schedule_id,
-        // d.day_id,
-        // sa.sa_id,
-        // CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname,    
-        // IFNULL(GROUP_CONCAT(d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
-        // IFNULL(CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
-        // IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No duty hours') AS total_duty_hours_formatted,
-        // IFNULL(CONCAT(ROUND(SUM(sds.total_duty_hours), 2), '/', dh.required_duty_hours, ' hours'), '0/No duty hours') AS rendered_vs_required,
-        // IFNULL(CONCAT(dh.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
-        // FROM student_assistant sa
-        // LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
-        // LEFT JOIN days d ON sds.day_id = d.day_id
-        // LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
-        // WHERE sa.sa_id = :saId
-        // GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.duty_schedule_id, dh.required_duty_hours
-        // ORDER BY sa_fullname, sds.start_time, sds.end_time";
         $sql = "SELECT 
         sds.duty_schedule_id,
         d.day_id,
         sa.sa_id,
         CONCAT(sa.lastname, ', ', sa.firstname) AS sa_fullname,    
-        IFNULL(GROUP_CONCAT(DISTINCT d.day_name ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
-        IFNULL(CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')), 'No time schedule') AS time_schedule,
-        IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No duty hours') AS total_duty_hours_formatted,
-        IFNULL(CONCAT(ROUND(SUM(sds.total_duty_hours), 2), '/', dh.required_duty_hours, ' hours'), '0/No duty hours') AS rendered_vs_required,
-        IFNULL(CONCAT(dh.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
-        FROM student_assistant sa
-        LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
-        LEFT JOIN days d ON sds.day_id = d.day_id
-        LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
+        IFNULL(
+            GROUP_CONCAT(
+                    CASE WHEN lr.approved_status_name = 'Approved' AND lr.leave_date = CURDATE() 
+                    AND WEEKDAY(lr.leave_date) + 1 = d.day_id 
+                    THEN CONCAT(d.day_name, ' - On Leave')
+                    ELSE d.day_name 
+            END 
+            ORDER BY d.day_id SEPARATOR ', '), 'No schedule') AS day_names,    
+            TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
+            TIME_FORMAT(sds.end_time, '%h:%i %p') AS time_end,
+            IFNULL(CONCAT(FLOOR(SUM(sds.total_duty_hours)), ' hours, ', ROUND((SUM(sds.total_duty_hours) * 60) % 60), ' minutes'), 'No duty hours') AS total_duty_hours_formatted,
+            IFNULL(CONCAT(ROUND(SUM(sds.total_duty_hours), 2), '/', dh.required_duty_hours, ' hours'), '0/No duty hours') AS rendered_vs_required,
+            IFNULL(CONCAT(dh.required_duty_hours, ' hours'), 'No duty hours') AS required_duty_hours
+            FROM student_assistant sa
+            LEFT JOIN sa_duty_schedule sds ON sa.sa_id = sds.sa_id
+            LEFT JOIN days d ON sds.day_id = d.day_id
+            LEFT JOIN duty_hours dh ON sds.duty_hours_id = dh.duty_hours_id
+            LEFT JOIN (
+                    SELECT 
+                    sa_leave_request.sa_id,
+                    sa_leave_request.date AS leave_date,
+                    approved_status.approved_status_name
+                    FROM sa_leave_request
+                    LEFT JOIN approved_status ON sa_leave_request.approved_status = approved_status.approved_status_id) lr ON sa.sa_id = lr.sa_id AND lr.approved_status_name = 'Approved' 
+                    AND lr.leave_date = CURDATE() 
         WHERE sa.sa_id = :saId
-        GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.start_time, sds.end_time, dh.required_duty_hours
+        GROUP BY sa.sa_id, sa.lastname, sa.firstname, sds.duty_schedule_id, dh.required_duty_hours
         ORDER BY sa_fullname, sds.start_time, sds.end_time";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':saId', $json['saId']);
@@ -119,8 +119,8 @@ class StudentAssistant
         tt.track_id,
         sa.sa_id,
         CONCAT(sa.firstname, ' ', sa.lastname) AS sa_fullname,
-        CONCAT(TIME_FORMAT(sds.start_time, '%h:%i %p'), ' - ', TIME_FORMAT(sds.end_time, '%h:%i %p')) AS time_schedule,
         TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
+        TIME_FORMAT(sds.end_time, '%h:%i %p') AS time_end,
         DATE_FORMAT(tt.date, '%M %d, %Y') AS formatted_date,
         d.day_name,
         TIME_FORMAT(tt.time_in, '%h:%i %p') AS time_in,     
@@ -134,12 +134,26 @@ class StudentAssistant
         LEFT JOIN days d ON sds.day_id = d.day_id
         LEFT JOIN approved_status ON tt.approved_status = approved_status.approved_status_id
         LEFT JOIN status ON tt.status = status.status_id
-        LEFT JOIN admin ON tt.approved_by = admin.admin_id
-        WHERE sa.sa_id = :saId";
+        LEFT JOIN admin ON tt.approved_by = admin.admin_id";
+        if (!empty($json['saId'])) {
+            $sql .= " WHERE sa.sa_id = :saId";
+        }
+        $sql .= " ORDER BY 
+            CASE 
+                WHEN approved_status.approved_status_name = 'Pending' THEN 1
+                WHEN approved_status.approved_status_name = 'Approved' THEN 2
+                WHEN approved_status.approved_status_name = 'Rejected' THEN 3
+                ELSE 4
+            END, 
+            tt.track_id DESC";
         $stmt = $conn->prepare($sql);
+        if (!empty($json['saId'])) {
+            $stmt->bindParam(':saId', $json['saId'], PDO::PARAM_INT);
+        }
         $stmt->bindParam(':saId', $json['saId']);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         unset($conn);
         unset($stmt);
         return json_encode($result);

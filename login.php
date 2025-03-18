@@ -3,8 +3,9 @@ session_start();
 header('Content-Type: application/json');
 $allowed_origin = "http://localhost:3000";
 //$allowed_origin = "http://192.168.1.48:3000";
+//$allowed_origin = "http://192.168.137.111:3000";
 header("Access-Control-Allow-Origin: $allowed_origin");
-header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Credentials: true"); //
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 

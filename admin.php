@@ -2,6 +2,7 @@
 header('Content-Type: application/json');
 $allowed_origin = "http://localhost:3000";
 //$allowed_origin = "http://192.168.1.48:3000";
+//$allowed_origin = "http://192.168.137.111:3000";
 header("Access-Control-Allow-Origin: $allowed_origin");
 
 class Admin
@@ -513,7 +514,7 @@ class Admin
         tt.track_id,
         sa.sa_id,
         CONCAT(sa.firstname, ' ', sa.lastname) AS sa_fullname,
-         TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
+        TIME_FORMAT(sds.start_time, '%h:%i %p') AS time_start,
         TIME_FORMAT(sds.end_time, '%h:%i %p') AS time_end,
         DATE_FORMAT(tt.date, '%M %d, %Y') AS formatted_date,
         d.day_name,
