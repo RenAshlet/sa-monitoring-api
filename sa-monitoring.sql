@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 27, 2025 at 12:46 AM
+-- Generation Time: Mar 19, 2025 at 03:21 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -40,9 +40,7 @@ CREATE TABLE `admin` (
 --
 
 INSERT INTO `admin` (`admin_id`, `firstname`, `lastname`, `username`, `password`) VALUES
-(1, 'John', 'Smith', 'admin', 'admin123'),
-(3, 'Tony', 'Stark', 'ironman', 'stark'),
-(4, 'Warren', 'Babaylan', 'goat', 'babaylan');
+(1, 'John', 'Smith', 'admin', 'admin123');
 
 -- --------------------------------------------------------
 
@@ -62,46 +60,47 @@ CREATE TABLE `admin_activity_log` (
 --
 
 INSERT INTO `admin_activity_log` (`log_id`, `admin_id`, `action`, `timestamp`) VALUES
-(71, 1, 'Added new student assistant: Ren Babaylan', '2025-02-22 12:10:37'),
-(72, 1, 'Added new student assistant: Nono Vincent Bagtasos', '2025-02-22 12:11:01'),
-(73, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Monday, Tuesday, Wednesday, Thursday, Friday, Saturday from 08:00 AM to 01:00 PM for 120 hours', '2025-02-22 12:11:32'),
-(74, 1, 'A new student assistant has been added: Kenneth Abalo', '2025-02-22 12:13:42'),
-(75, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-02-22 12:17:25'),
-(76, 1, 'Added new admin: Tony Stark', '2025-02-22 12:44:47'),
-(77, 3, 'A new student assistant has been added: Hazel Mae Albaladejo', '2025-02-24 09:10:21'),
-(78, 1, 'Added new duty hours: 10 hours', '2025-02-24 09:45:35'),
-(79, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-02-24 11:01:53'),
-(80, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 11:33:49'),
-(81, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 11:49:12'),
-(82, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 11:52:06'),
-(83, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-02-24 11:52:48'),
-(84, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 12:04:44'),
-(85, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Pending.', '2025-02-24 12:05:44'),
-(86, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 12:05:52'),
-(87, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Pending.', '2025-02-24 12:08:00'),
-(88, 1, 'Added new duty hours: 50 hours', '2025-02-24 13:52:06'),
-(89, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Rejected.', '2025-02-24 15:38:12'),
-(90, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Pending.', '2025-02-24 15:38:29'),
-(91, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-02-24 15:38:38'),
-(92, 3, 'A new student assistant has been added: Joie Llegunas', '2025-02-24 15:41:30'),
-(93, 3, 'A new student assistant has been added: Scott Salvana', '2025-02-24 15:41:43'),
-(94, 3, 'A new student assistant has been added: Ren Babaylan', '2025-02-24 15:45:46'),
-(95, 1, 'A new student assistant has been added: Miguel Asilo', '2025-02-24 16:18:42'),
-(96, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-02-24 16:41:12'),
-(97, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Pending.', '2025-02-24 16:47:12'),
-(98, 1, 'New admin added: Warren Babaylan', '2025-02-25 11:22:42'),
-(99, 1, 'A new student assistant has been added: Jahnine Balsabas', '2025-02-25 11:24:45'),
-(100, 1, 'A new student assistant has been added: Carlos Lopez', '2025-02-25 14:11:50'),
-(101, 1, 'A new student assistant has been added: Ronex Ochavillo', '2025-02-25 14:12:32'),
-(102, 1, 'Assigned duty schedule to Ren Babaylan on Tuesday, Wednesday, Thursday, Monday, Friday, Saturday from 07:00 AM to 09:00 AM for 30 hours', '2025-02-26 12:40:18'),
-(103, 1, 'Assigned duty schedule to Carlos Lopez on Monday, Tuesday, Wednesday, Thursday, Saturday, Friday from 08:00 AM to 01:00 PM for 90 hours', '2025-02-26 13:41:37'),
-(104, 1, 'Assigned duty schedule to Carlos Lopez on Monday, Tuesday, Thursday, Friday, Saturday, Wednesday from 08:00 AM to 01:00 PM for 90 hours', '2025-02-26 13:43:38'),
-(105, 1, 'Time-in for student assistant Carlos Lopez has been Rejected. Current Status: Absent', '2025-02-26 15:51:22'),
-(106, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Rejected. Current Status: Absent', '2025-02-26 15:51:36'),
-(107, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-02-26 15:51:48'),
-(108, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Present', '2025-02-26 15:51:56'),
-(109, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Rejected. Current Status: Late', '2025-02-26 16:35:13'),
-(110, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Rejected. Current Status: Present', '2025-02-26 17:05:11');
+(337, 1, 'A new student assistant has been added: Ashleeh Thess Ranalan', '2025-03-16 16:39:06'),
+(338, 1, 'A new student assistant has been added: Alter Lloyd Corcuera', '2025-03-16 16:39:55'),
+(339, 1, 'Added new duty hours: 5 hours', '2025-03-16 16:40:37'),
+(340, 1, 'Added new duty hours: 10 hours', '2025-03-16 16:40:37'),
+(341, 1, 'Added new duty hours: 90 hours', '2025-03-16 16:40:37'),
+(342, 1, 'Added new duty hours: 180 hours', '2025-03-16 16:40:38'),
+(343, 1, 'A new student assistant has been added: Nono Vincent Bagtasos', '2025-03-16 16:41:26'),
+(344, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Monday from 07:00 AM to 10:00 AM for 5 hours', '2025-03-16 16:41:59'),
+(345, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Tuesday from 07:00 AM to 10:00 AM for 5 hours', '2025-03-16 16:42:12'),
+(346, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Monday from 08:00 AM to 11:00 AM for 10 hours', '2025-03-17 10:12:17'),
+(347, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Tuesday from 08:00 AM to 11:00 AM for 10 hours', '2025-03-17 10:12:25'),
+(348, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-03-17 10:19:41'),
+(349, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Pending. Current Status: Late', '2025-03-17 10:40:33'),
+(350, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-03-17 10:42:22'),
+(351, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Wednesday from 08:00 AM to 11:00 AM for 10 hours', '2025-03-17 10:43:13'),
+(352, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-03-17 10:49:11'),
+(353, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-03-17 10:55:41'),
+(354, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-03-17 10:56:12'),
+(355, 1, 'A new student assistant has been added: Warren Babaylan', '2025-03-17 11:54:27'),
+(356, 1, 'A new student assistant has been added: eliza may guin parba', '2025-03-17 12:28:28'),
+(357, 1, 'Assigned duty schedule to eliza may guin parba on Monday, Wednesday from 07:30 AM to 05:30 PM for 90 hours', '2025-03-17 12:29:23'),
+(358, 1, 'Assigned duty schedule to eliza may guin parba on Friday from 07:30 AM to 05:30 PM for 90 hours', '2025-03-17 12:29:43'),
+(359, 1, 'Time-in for student assistant eliza may guin parba has been Approved. Current Status: Late', '2025-03-17 12:33:49'),
+(360, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-03-18 09:49:19'),
+(361, 1, 'Assigned duty schedule to Nono Vincent Bagtasos on Tuesday from 08:00 AM to 11:00 AM for 10 hours', '2025-03-18 10:16:03'),
+(362, 1, 'Time-in for student assistant Nono Vincent Bagtasos has been Approved. Current Status: Late', '2025-03-18 10:16:33'),
+(363, 1, 'A new student assistant has been added: Kenneth Abalo', '2025-03-18 10:28:23'),
+(364, 1, 'Assigned duty schedule to Kenneth Abalo on Tuesday from 08:30 AM to 01:00 PM for 10 hours', '2025-03-18 10:28:47'),
+(365, 1, 'The leave request for student assistant Kenneth Abalo has been Approved.', '2025-03-18 10:32:34'),
+(366, 1, 'The leave request for student assistant Kenneth Abalo has been Approved.', '2025-03-18 10:42:31'),
+(367, 1, 'The leave request for student assistant Kenneth Abalo has been Approved.', '2025-03-18 11:06:23'),
+(368, 1, 'Assigned duty schedule to Kenneth Abalo on Wednesday from 08:30 AM to 01:00 PM for 10 hours', '2025-03-18 11:06:43'),
+(369, 1, 'The leave request for student assistant Nono Vincent Bagtasos has been Approved.', '2025-03-18 11:22:37'),
+(370, 1, 'Assigned duty schedule to Kenneth Abalo on Friday from 08:30 AM to 01:00 PM for 10 hours', '2025-03-18 11:23:49'),
+(371, 1, 'The leave request for student assistant Kenneth Abalo has been Approved.', '2025-03-18 11:25:29'),
+(372, 1, 'Assigned duty schedule to Warren Babaylan on Monday, Thursday from 10:00 AM to 11:00 AM for 10 hours', '2025-03-19 09:52:38'),
+(373, 1, 'Assigned duty schedule to Warren Babaylan on Wednesday from 10:00 AM to 11:00 AM for 10 hours', '2025-03-19 09:53:20'),
+(374, 1, 'The leave request for student assistant Warren Babaylan has been Approved.', '2025-03-19 09:54:47'),
+(375, 1, 'The leave request for student assistant Warren Babaylan has been Rejected.', '2025-03-19 09:56:31'),
+(376, 1, 'Assigned duty schedule to Ashleeh Thess Ranalan on Tuesday from 08:00 AM to 03:00 PM for 180 hours', '2025-03-19 09:58:30'),
+(377, 1, 'Time-in for student assistant Warren Babaylan has been Approved. Current Status: Present', '2025-03-19 10:19:35');
 
 -- --------------------------------------------------------
 
@@ -162,11 +161,10 @@ CREATE TABLE `duty_hours` (
 --
 
 INSERT INTO `duty_hours` (`duty_hours_id`, `required_duty_hours`) VALUES
-(10, 10),
-(8, 30),
-(12, 50),
-(6, 90),
-(7, 120);
+(75, 5),
+(76, 10),
+(77, 90),
+(78, 180);
 
 -- --------------------------------------------------------
 
@@ -189,17 +187,19 @@ CREATE TABLE `sa_duty_schedule` (
 --
 
 INSERT INTO `sa_duty_schedule` (`duty_schedule_id`, `sa_id`, `day_id`, `start_time`, `end_time`, `duty_hours_id`, `total_duty_hours`) VALUES
-(67, 42, 1, '08:00:00', '13:00:00', 7, 1.72),
-(68, 42, 2, '08:00:00', '13:00:00', 7, 0.00),
-(69, 42, 3, '08:00:00', '13:00:00', 7, 0.00),
-(70, 42, 4, '08:00:00', '13:00:00', 7, 0.00),
-(71, 42, 5, '08:00:00', '13:00:00', 7, 0.00),
-(72, 42, 6, '08:00:00', '13:00:00', 7, 2.02),
-(73, 41, 5, '07:00:00', '09:00:00', 8, 0.00),
-(74, 41, 6, '07:00:00', '09:00:00', 8, 0.00),
-(75, 41, 1, '07:00:00', '09:00:00', 8, 0.00),
-(76, 50, 5, '08:00:00', '13:00:00', 6, 0.00),
-(77, 50, 3, '08:00:00', '13:00:00', 6, 0.00);
+(222, 102, 1, '08:00:00', '11:00:00', 76, 1.00),
+(224, 102, 3, '08:00:00', '11:00:00', 76, 0.00),
+(225, 104, 1, '07:30:00', '17:30:00', 77, 0.00),
+(226, 104, 3, '07:30:00', '17:30:00', 77, 0.00),
+(227, 104, 5, '07:30:00', '17:30:00', 77, 0.00),
+(228, 102, 2, '08:00:00', '11:00:00', 76, 0.75),
+(229, 105, 2, '08:30:00', '13:00:00', 76, 0.00),
+(230, 105, 3, '08:30:00', '13:00:00', 76, 0.00),
+(231, 105, 5, '08:30:00', '13:00:00', 76, 0.00),
+(232, 103, 1, '10:00:00', '11:00:00', 76, 0.00),
+(233, 103, 4, '10:00:00', '11:00:00', 76, 0.00),
+(234, 103, 3, '10:00:00', '11:00:00', 76, 0.00),
+(235, 100, 2, '08:00:00', '15:00:00', 78, 0.00);
 
 -- --------------------------------------------------------
 
@@ -223,10 +223,10 @@ CREATE TABLE `sa_leave_request` (
 --
 
 INSERT INTO `sa_leave_request` (`leave_id`, `sa_id`, `leave_type`, `reason`, `date`, `approved_status`, `approved_by`, `admin_comment`) VALUES
-(12, 42, 'checkup', 'Please allow me to take leave on that day sir because I will go to clinic and take a checkup', '2025-02-24', 2, 1, 'understood.'),
-(13, 42, 'Personal', 'absent sako sir please', '2025-02-25', 2, 1, 'bfskdbva'),
-(14, 42, 'sadboi', 'cahcua', '2025-02-26', 2, 1, ''),
-(15, 42, 'Sick', 'labsick', '2025-02-27', 1, 1, ' dsv fsbvs');
+(25, 102, 'Take Exam.', 'Good day Sir, please allow me to take absent, because I have final exam on that day.', '2025-03-19', 2, 1, 'Ok'),
+(28, 105, 'Personal', 'Good day sir, I will take an absent this day because I have an final exam to take', '2025-03-18', 2, 1, 'Sure no problem.'),
+(29, 105, 'Personal', 'I also leave on Wednesday Sir, Because I have an exam', '2025-03-19', 2, 1, 'Sure Ok ra'),
+(30, 103, 'Sakit tiil', 'absent sako sir', '2025-03-19', 3, 1, 'not valid reason');
 
 -- --------------------------------------------------------
 
@@ -259,6 +259,7 @@ CREATE TABLE `student_assistant` (
   `firstname` varchar(25) NOT NULL,
   `lastname` varchar(25) NOT NULL,
   `student_id` varchar(25) NOT NULL,
+  `email` varchar(50) NOT NULL,
   `username` varchar(25) NOT NULL,
   `password` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -267,17 +268,13 @@ CREATE TABLE `student_assistant` (
 -- Dumping data for table `student_assistant`
 --
 
-INSERT INTO `student_assistant` (`sa_id`, `firstname`, `lastname`, `student_id`, `username`, `password`) VALUES
-(41, 'Ren', 'Babaylan', '022122034021', '022122034021', 'babaylan'),
-(42, 'Nono Vincent', 'Bagtasos', '022122034022', '022122034022', 'bagtasos'),
-(43, 'Kenneth', 'Abalo', '022122034023', '022122034023', 'abalo'),
-(44, 'Hazel Mae', 'Albaladejo', '022122034024', '022122034024', 'albaladejo'),
-(45, 'Joie', 'Llegunas', '022122034025', '022122034025', 'llegunas'),
-(46, 'Scott', 'Salvana', '022122034026', '022122034026', 'salvana'),
-(48, 'Miguel', 'Asilo', '022122034027', '022122034027', 'asilo'),
-(49, 'Jahnine', 'Balsabas', '022122034028', '022122034028', 'balsabas'),
-(50, 'Carlos', 'Lopez', '022122034029', '022122034029', 'lopez'),
-(51, 'Ronex', 'Ochavillo', '022122023031', '022122023031', 'ochavillo');
+INSERT INTO `student_assistant` (`sa_id`, `firstname`, `lastname`, `student_id`, `email`, `username`, `password`) VALUES
+(100, 'Ashleeh Thess', 'Ranalan', '02-2324-07849', 'asog.ranalan.coc@phinmaed.com', '02-2324-07849', 'ranalan'),
+(101, 'Alter Lloyd', 'Corcuera', '02232405468', 'almo.corcuera.coc@phinmaed.com', '02232405468', 'corcuera'),
+(102, 'Nono Vincent', 'Bagtasos', '02-2122-034022', 'nonbagtasos@gmail.com', '02-2122-034022', 'bagtasos'),
+(103, 'Warren', 'Babaylan', '02-2122-034021', 'waba.babaylan.coc@phinmaed.com', '02-2122-034021', 'babaylan'),
+(104, 'eliza may guin', 'parba', '02-2223-05865', 'elma.parba.coc@phinmaed.com', '02-2223-05865', 'parba'),
+(105, 'Kenneth', 'Abalo', '02-2122-034023', 'kenabalo@gmail.com', '02-2122-034023', 'abalo');
 
 -- --------------------------------------------------------
 
@@ -302,11 +299,10 @@ CREATE TABLE `time_track` (
 --
 
 INSERT INTO `time_track` (`track_id`, `sa_id`, `duty_schedule_id`, `date`, `time_in`, `time_out`, `approved_status`, `status`, `approved_by`) VALUES
-(36, 42, 72, '2025-02-22', '12:17:01', '11:05:59', 3, 2, 1),
-(37, 42, 67, '2025-02-24', '09:24:41', '11:08:08', 3, 1, 1),
-(38, 42, 72, '2025-02-26', '12:57:51', '13:31:41', 3, 3, 1),
-(39, 50, 76, '2025-02-26', '13:59:05', NULL, 3, 3, 1),
-(40, 42, 72, '2025-02-27', '07:44:43', NULL, 1, 3, NULL);
+(61, 102, 222, '2025-03-17', '10:13:27', '10:03:15', 2, 2, 1),
+(62, 104, 225, '2025-03-17', '12:33:19', NULL, 2, 2, 1),
+(64, 102, 228, '2025-03-18', '10:16:11', '11:01:23', 2, 2, 1),
+(65, 103, 234, '2025-03-19', '09:57:02', NULL, 2, 1, 1);
 
 --
 -- Triggers `time_track`
@@ -392,7 +388,8 @@ ALTER TABLE `status`
 ALTER TABLE `student_assistant`
   ADD PRIMARY KEY (`sa_id`),
   ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `student_id` (`student_id`);
+  ADD UNIQUE KEY `student_id` (`student_id`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- Indexes for table `time_track`
@@ -413,13 +410,13 @@ ALTER TABLE `time_track`
 -- AUTO_INCREMENT for table `admin`
 --
 ALTER TABLE `admin`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `admin_activity_log`
 --
 ALTER TABLE `admin_activity_log`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=378;
 
 --
 -- AUTO_INCREMENT for table `approved_status`
@@ -437,19 +434,19 @@ ALTER TABLE `days`
 -- AUTO_INCREMENT for table `duty_hours`
 --
 ALTER TABLE `duty_hours`
-  MODIFY `duty_hours_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `duty_hours_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT for table `sa_duty_schedule`
 --
 ALTER TABLE `sa_duty_schedule`
-  MODIFY `duty_schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
+  MODIFY `duty_schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=236;
 
 --
 -- AUTO_INCREMENT for table `sa_leave_request`
 --
 ALTER TABLE `sa_leave_request`
-  MODIFY `leave_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `leave_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `status`
@@ -461,13 +458,13 @@ ALTER TABLE `status`
 -- AUTO_INCREMENT for table `student_assistant`
 --
 ALTER TABLE `student_assistant`
-  MODIFY `sa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `sa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
 
 --
 -- AUTO_INCREMENT for table `time_track`
 --
 ALTER TABLE `time_track`
-  MODIFY `track_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `track_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- Constraints for dumped tables
